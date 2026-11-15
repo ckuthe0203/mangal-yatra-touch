@@ -1,0 +1,106 @@
+{
+  "name": "EVA-1: Landing site to Wildcat Ridge",
+  "site": "Jezero Crater, Mars",
+  "output_dir": "data/jezero_real",
+  "bbox": [
+    77.405,
+    18.431,
+    77.466,
+    18.474
+  ],
+  "inputs": {
+    "dtm": "raw/jezero_hirise_dtm.tif",
+    "imagery": "raw/jezero_hirise_ortho.tif",
+    "thermal_inertia": "raw/Jezero_Thermal_Inertia_v1.tiff"
+  },
+  "manual_hazards": null,
+  "tile_zooms": "13-18",
+  "zoom": 15.2,
+  "hazard_slope_deg": 25,
+  "max_route_slope_deg": 15,
+  "soft_ground_ti_max": 175,
+  "min_hazard_area_m2": 400,
+  "planner_max_pixels": 800,
+  "route_simplify_m": 5,
+  "science_goal": "Sample delta sediments and carbonates that may preserve signs of ancient life",
+  "eva_duration_min": 420,
+  "o2_reserve_min": 30,
+  "crew": [
+    "EV1",
+    "EV2"
+  ],
+  "waypoints": [
+    {
+      "id": "WP0",
+      "name": "Habitat airlock",
+      "kind": "base",
+      "task": "EVA start. Check suit seals.",
+      "note": "Octavia E. Butler landing site (Perseverance, 18 Feb 2021)",
+      "coord": [
+        77.45089,
+        18.44463
+      ]
+    },
+    {
+      "id": "WP1",
+      "name": "Sid",
+      "kind": "science",
+      "task": "Inspect the igneous rock Perseverance cored. Samples 8 and 9, sols 371 and 377.",
+      "source": "NASA Perseverance sample list + rover position on the sealing sol (NASA/JPL MMGIS M20_waypoints)",
+      "coord": [
+        77.45243,
+        18.4439
+      ]
+    },
+    {
+      "id": "WP2",
+      "name": "Brac",
+      "kind": "science",
+      "task": "Core the olivine-rich rock of Seitah. Samples 4 and 5, sols 262 and 271.",
+      "source": "NASA Perseverance sample list + rover position on the sealing sol (NASA/JPL MMGIS M20_waypoints)",
+      "coord": [
+        77.44302,
+        18.43396
+      ]
+    },
+    {
+      "id": "WP3",
+      "name": "Issole",
+      "kind": "science",
+      "task": "Collect a core from the Issole outcrop. Samples 6 and 7, sols 298 and 337.",
+      "source": "NASA Perseverance sample list + rover position on the sealing sol (NASA/JPL MMGIS M20_waypoints)",
+      "coord": [
+        77.44137,
+        18.43266
+      ]
+    },
+    {
+      "id": "WP4",
+      "name": "Wildcat Ridge",
+      "kind": "science",
+      "task": "Sample the delta mudstone, best place for signs of ancient life. Samples 12 and 13; Skinner Ridge samples 10 and 11 are 35 meters away.",
+      "source": "NASA Perseverance sample list + rover position on the sealing sol (NASA/JPL MMGIS M20_waypoints)",
+      "coord": [
+        77.40592,
+        18.45865
+      ]
+    }
+  ],
+  "conditions": {
+    "air_temp_c": -45,
+    "pressure_pa": 730,
+    "wind_mps": 5,
+    "dust_opacity_tau": 0.6,
+    "dust_warn_tau": 1.0,
+    "radiation_usv_per_day": 670,
+    "solar_particle_event": false,
+    "uv": "high",
+    "sources": {
+      "weather": "Perseverance MEDA (replace with values for your chosen sol)",
+      "radiation": "Curiosity RAD surface average (Gale Crater, used as proxy)",
+      "dust": "MEDA / orbital opacity"
+    }
+  },
+  "imagery_color": "mars",
+  "goal_short": "Sample the Jezero delta for signs of ancient life."
+}

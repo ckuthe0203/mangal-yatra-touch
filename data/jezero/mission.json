@@ -1,0 +1,20 @@
+{
+ "name": "EVA-1: Jezero delta front",
+ "site": "Jezero Crater, Mars",
+ "center": [
+  77.437,
+  18.451
+ ],
+ "zoom": 15.2,
+ "science_goal": "Sample delta sediments and carbonates that may preserve signs of ancient life",
+ "eva_duration_min": 420,
+ "o2_reserve_min": 30,
+ "crew": [
+  "EV1",
+  "EV2"
+ ],
+ "data_note": "Sample coordinates and hazard outlines are illustrative placeholders. Replace with pipeline output from real HiRISE/CTX/MOLA/THEMIS data.",
+ "tile_maxzoom": 17,
+ "imagery_credit": "MRO CTX mosaic: NASA/JPL/MSSS/Caltech Murray Lab, via Esri OnMars",
+ "goal_short": "Sample the Jezero delta for signs of ancient life."
+}

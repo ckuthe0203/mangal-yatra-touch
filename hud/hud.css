@@ -1,0 +1,105 @@
+/* HUD palette: black = see-through on the beam splitter, bright cyan/green = visible. */
+:root {
+  --c: #39f3ff;      /* primary cyan */
+  --g: #5dff8f;      /* ok / science */
+  --w: #ffc93c;      /* warning */
+  --r: #ff4d4d;      /* critical */
+  --dim: #6fa9b0;
+  --font: "DejaVu Sans Mono", "Menlo", "Consolas", monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; color: var(--c); font-family: var(--font); overflow: hidden; }
+#hud { position: relative; width: 100vw; height: 100vh; }
+body.mirror-x #hud { transform: scaleX(-1); }
+body.mirror-y #hud { transform: scaleY(-1); }
+#map { position: absolute; inset: 0; }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none !important; }
+
+#me {
+  position: absolute; left: 50%; top: calc(62% - 40px); width: 0; height: 0; transform: translate(-50%, -50%);
+  border-left: 11px solid transparent; border-right: 11px solid transparent; border-bottom: 26px solid var(--g);
+  filter: drop-shadow(0 0 4px #000); pointer-events: none;
+}
+
+.panel { position: absolute; z-index: 2; background: rgba(0, 0, 0, .82); border: 1px solid rgba(57, 243, 255, .35); border-radius: 8px; padding: 10px 14px; }
+.label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin: 4px 0; }
+.big { font-size: 20px; font-weight: bold; }
+.huge { font-size: 44px; font-weight: bold; color: #fff; }
+.unit { font-size: 18px; }
+.small { font-size: 13px; margin-top: 4px; max-width: 280px; }
+.dim { color: var(--dim); }
+.hidden { display: none !important; }
+
+#compass { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: min(560px, 70vw); height: 58px; overflow: hidden;
+  border-bottom: 1px solid rgba(57, 243, 255, .4); background: rgba(0, 0, 0, .55); }
+#tape { position: absolute; inset: 0 0 22px 0; }
+#tape span { position: absolute; top: 4px; transform: translateX(-50%); font-size: 13px; }
+#tape span.card { color: #fff; font-weight: bold; }
+#tape span.wp { color: var(--g); top: 18px; font-size: 16px; }
+#heading { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); font-size: 15px; color: #fff; }
+#heading::before { content: "\25BC"; position: absolute; top: -40px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--c); }
+
+#nav { top: 70px; left: 16px; min-width: 240px; }
+#suit { top: 70px; right: 16px; min-width: 200px; }
+.row { display: flex; gap: 8px; align-items: baseline; font-size: 14px; }
+.row span { flex: 1; color: var(--dim); }
+.row b { font-size: 18px; color: #fff; min-width: 54px; text-align: right; }
+.row i { font-style: normal; font-size: 11px; width: 38px; color: var(--dim); }
+.row b.warn { color: var(--w); }
+.row b.crit { color: var(--r); }
+
+#alerts { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.alert { padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 15px; background: rgba(0, 0, 0, .7); }
+.alert.warn { border: 2px solid var(--w); color: var(--w); }
+.alert.critical { border: 2px solid var(--r); color: var(--r); animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .45; } }
+
+#bottom { position: absolute; bottom: 92px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+#voice { background: rgba(0, 0, 0, .6); padding: 6px 12px; border-radius: 6px; font-size: 14px; max-width: 60%; }
+#mic { color: var(--dim); }
+#mic.on { color: var(--r); animation: blink .6s steps(2) infinite; }
+#layers { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.chip { font-size: 12px; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--dim); color: var(--dim); background: rgba(0, 0, 0, .6); cursor: pointer; }
+.chip.on { border-color: var(--c); color: #000; background: var(--c); }
+.chip.na { opacity: .35; }
+
+#cmdForm { position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); width: min(640px, 90vw); }
+#cmdInput { width: 100%; padding: 10px 14px; font: 15px var(--font); color: #fff; background: rgba(0, 0, 0, .85); border: 1px solid var(--c); border-radius: 8px; outline: none; }
+#help { bottom: 140px; right: 16px; font-size: 13px; line-height: 1.6; }
+#conn { position: absolute; bottom: 50%; left: 50%; transform: translate(-50%, 50%); color: var(--w); font-size: 18px; background: rgba(0,0,0,.8); padding: 10px 18px; border-radius: 8px; }
+
+/* ---------- touch toolbar (Touch Display 2, glove-friendly: big targets) ---------- */
+#toolbar { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; display: flex; gap: 6px; padding: 8px;
+  background: rgba(0, 0, 0, .85); border-top: 1px solid rgba(57, 243, 255, .35); }
+.tb { flex: 1; min-width: 0; border: 1px solid rgba(57, 243, 255, .5); border-radius: 10px; background: #031418; color: var(--c);
+  font: bold 13px var(--font); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; cursor: pointer; }
+.tb .ico { font-size: 24px; line-height: 1; }
+.tb:active, .tb.held { background: var(--c); color: #000; }
+.tb.talk.held { background: var(--r); border-color: var(--r); color: #fff; }
+.tb.sos { border-color: var(--r); color: var(--r); }
+.tb.sos.on { background: var(--r); color: #fff; }
+.chip { font-size: 15px; padding: 8px 12px; border-radius: 16px; }       /* tappable layer chips */
+body.device #help { display: none !important; }
+
+/* ---------- portrait (Touch Display 2 native 720x1280) ---------- */
+@media (max-aspect-ratio: 4/5) {
+  #compass { width: 100vw; }
+  #nav, #suit { top: 66px; min-width: 0; padding: 8px 10px; }
+  #nav { left: 8px; width: calc(52vw - 12px); }
+  #suit { right: 8px; width: calc(48vw - 12px); }
+  .huge { font-size: 38px; }
+  .row { font-size: 13px; }
+  .row b { font-size: 16px; min-width: 40px; }
+  #alerts { top: auto; bottom: 200px; width: 94vw; }
+  #bottom { flex-direction: column; align-items: stretch; }
+  #voice { max-width: 100%; }
+  #layers { justify-content: center; }
+}
+
+/* Earth link: message from Mission Control (tap to dismiss) */
+#earthMsg { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); width: min(560px, 88vw);
+  background: rgba(0, 20, 30, .92); border: 2px solid var(--c); border-radius: 10px; padding: 12px 16px;
+  color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 0 18px rgba(57, 243, 255, .45); cursor: pointer; z-index: 5; }
+#earthMsg .label { color: var(--c); margin: 0 0 6px; }
+#earthLine { max-width: 220px; }

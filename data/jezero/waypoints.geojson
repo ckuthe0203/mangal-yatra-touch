@@ -1,0 +1,85 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "WP0",
+    "name": "Habitat airlock",
+    "kind": "base",
+    "task": "EVA start. Check suit seals."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     77.4508,
+     18.4447
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "WP1",
+    "name": "Boulder field bypass",
+    "kind": "nav",
+    "task": "Stay south of the boulder field."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     77.444,
+     18.446
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "WP2",
+    "name": "Delta front outcrop",
+    "kind": "science",
+    "task": "Photograph layered sediments. Collect core sample A."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     77.433,
+     18.449
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "WP3",
+    "name": "Carbonate target",
+    "kind": "science",
+    "task": "Scan with spectrometer. Collect core sample B."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     77.4265,
+     18.4535
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "WP4",
+    "name": "Scarp viewpoint",
+    "kind": "science",
+    "task": "Panorama of the delta. Then return to habitat."
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     77.421,
+     18.4575
+    ]
+   }
+  }
+ ]
+}

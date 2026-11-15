@@ -1,0 +1,116 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "HZ1",
+    "name": "Boulder field",
+    "kind": "rocks",
+    "source": "HiRISE imagery",
+    "warn_m": 80
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       77.4425,
+       18.4466
+      ],
+      [
+       77.4375,
+       18.4468
+      ],
+      [
+       77.4365,
+       18.4495
+      ],
+      [
+       77.441,
+       18.45
+      ],
+      [
+       77.4425,
+       18.4466
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "HZ2",
+    "name": "Steep slope >25 deg",
+    "kind": "slope",
+    "source": "HiRISE DTM slope",
+    "warn_m": 60
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       77.429,
+       18.45
+      ],
+      [
+       77.425,
+       18.4505
+      ],
+      [
+       77.4245,
+       18.4525
+      ],
+      [
+       77.4285,
+       18.452
+      ],
+      [
+       77.429,
+       18.45
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "id": "HZ3",
+    "name": "Soft sand ripples",
+    "kind": "soft_ground",
+    "source": "THEMIS thermal inertia",
+    "warn_m": 60
+   },
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       77.4235,
+       18.458
+      ],
+      [
+       77.42,
+       18.4585
+      ],
+      [
+       77.4195,
+       18.4605
+      ],
+      [
+       77.423,
+       18.46
+      ],
+      [
+       77.4235,
+       18.458
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}

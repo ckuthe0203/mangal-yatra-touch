@@ -1,0 +1,15 @@
+{
+ "air_temp_c": -45,
+ "pressure_pa": 730,
+ "wind_mps": 5,
+ "dust_opacity_tau": 0.6,
+ "dust_warn_tau": 1.0,
+ "radiation_usv_per_day": 670,
+ "solar_particle_event": false,
+ "uv": "high",
+ "sources": {
+  "weather": "Perseverance MEDA (replace with values for your chosen sol)",
+  "radiation": "Curiosity RAD surface average (Gale Crater, used as proxy)",
+  "dust": "MEDA / orbital opacity"
+ }
+}

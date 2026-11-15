@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mangal Yatra HUD</title>
+<link rel="stylesheet" href="/hud/vendor/maplibre-gl.css">
+<link rel="stylesheet" href="/hud/hud.css">
+</head>
+<body>
+<div id="hud">
+  <div id="map"></div>
+  <div id="me" aria-label="Your position"></div>
+
+  <header id="compass">
+    <div id="tape"></div>
+    <div id="heading"><span id="hdg">---</span>&deg; <span id="hdgl"></span></div>
+  </header>
+
+  <section id="nav" class="panel">
+    <div class="label">Next waypoint</div>
+    <div id="wpName" class="big">--</div>
+    <div><span id="wpDist" class="huge">--</span> <span class="unit">m</span></div>
+    <div id="wpTask" class="small"></div>
+    <div class="small dim">Route left <span id="remain">--</span> m &middot; T+<span id="mt">0</span> min <span id="paused"></span></div>
+  </section>
+
+  <section id="suit" class="panel">
+    <div class="label">Suit</div>
+    <div class="row"><span>O&#8322;</span><b id="o2">--</b><i>min</i></div>
+    <div class="row"><span>Battery</span><b id="bat">--</b><i>%</i></div>
+    <div class="row"><span>Temp</span><b id="stemp">--</b><i>&deg;C</i></div>
+    <div class="row"><span>Pressure</span><b id="spres">--</b><i>kPa</i></div>
+    <div class="label">Outside</div>
+    <div class="row"><span>Dust &tau;</span><b id="dust">--</b><i></i></div>
+    <div class="row"><span>Air</span><b id="air">--</b><i>&deg;C</i></div>
+    <div class="row"><span>Radiation</span><b id="rad">--</b><i>&micro;Sv/d</i></div>
+    <div class="label">Earth link</div>
+    <div class="row"><span>Delay</span><b id="edelay">--</b><i id="edelayU">min</i></div>
+    <div id="earthLine" class="small dim"></div>
+  </section>
+
+  <div id="alerts"></div>
+  <div id="earthMsg" class="hidden" role="status"></div>
+
+  <footer id="bottom">
+    <div id="voice"><span id="mic">&#9679;</span> <span id="voiceText">Push to talk, or press Enter to type a command</span></div>
+    <div id="layers"></div>
+  </footer>
+
+  <nav id="toolbar" aria-label="Controls">
+    <button id="btnTalk" class="tb talk" aria-label="Push to talk"><span class="ico">&#127908;</span>Talk</button>
+    <button data-act="next_waypoint" class="tb" aria-label="Next waypoint"><span class="ico">&#9197;</span>Next</button>
+    <button data-act="zoom_in" class="tb" aria-label="Zoom in"><span class="ico">&#65291;</span>Zoom</button>
+    <button data-act="zoom_out" class="tb" aria-label="Zoom out"><span class="ico">&#65293;</span>Zoom</button>
+    <button data-act="pause" id="btnPause" class="tb" aria-label="Pause or resume"><span class="ico">&#9208;</span>Pause</button>
+    <button data-act="recenter" class="tb" aria-label="Recenter heading"><span class="ico">&#8635;</span>Center</button>
+    <button data-act="sos" class="tb sos" aria-label="SOS"><span class="ico">&#9888;</span>SOS</button>
+  </nav>
+
+  <form id="cmdForm" class="hidden">
+    <input id="cmdInput" autocomplete="off" placeholder="Type a voice command, e.g. &quot;show hazards&quot; or &quot;how far to the next waypoint&quot;">
+  </form>
+
+  <div id="help" class="hidden panel">
+    <div class="label">Keyboard (laptop demo)</div>
+    <div>&larr; &rarr; turn head &middot; R recenter &middot; 0 restart route</div>
+    <div>N next waypoint &middot; P pause/resume</div>
+    <div>+ / - zoom &middot; 1-5 toggle layers</div>
+    <div>Enter type a voice command</div>
+    <div>S SOS &middot; M mirror for visor &middot; H help</div>
+    <div>E test a message from Earth</div>
+  </div>
+  <div id="conn">Connecting to helmet...</div>
+</div>
+<script src="/hud/vendor/maplibre-gl.js"></script>
+<script src="/hud/hud.js"></script>
+</body>
+</html>

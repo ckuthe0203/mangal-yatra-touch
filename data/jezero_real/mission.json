@@ -1,0 +1,20 @@
+{
+ "name": "EVA-1: Landing site to Wildcat Ridge",
+ "site": "Jezero Crater, Mars",
+ "center": [
+  77.43549999999999,
+  18.4525
+ ],
+ "zoom": 15.2,
+ "tile_maxzoom": 18,
+ "science_goal": "Sample delta sediments and carbonates that may preserve signs of ancient life",
+ "goal_short": "Sample the Jezero delta for signs of ancient life.",
+ "imagery_credit": "HiRISE 25 cm orthomosaic and 1 m DTM: NASA/JPL/UArizona, USGS Mars 2020 TRN mosaics; thermal inertia: THEMIS (Zenodo 4931348)",
+ "data_note": "Built by pipeline/build_site.py from HiRISE DTM slope and THEMIS thermal inertia.",
+ "eva_duration_min": 420,
+ "o2_reserve_min": 30,
+ "crew": [
+  "EV1",
+  "EV2"
+ ]
+}

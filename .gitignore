@@ -1,0 +1,10 @@
+# secrets: Twilio keys etc.
+backend/secrets.env
+*.env
+!backend/secrets.example.env
+# Python
+__pycache__/
+*.pyc
+# large raw NASA data (re-create with pipeline/fetch_hirise.py) and pipeline scratch
+raw/
+data/*/_work/
