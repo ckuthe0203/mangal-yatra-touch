@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from geo import distance_m, distance_to_polygon_m, compass_label, bearing_deg
 from earth_link import EarthLink
 from eva_log import EvaLog, LOG_DIR
 from mission_control import MissionControl
+from telemetry_store import TelemetryStore
 from sim import RouteSimulator
 from sensors import Sensors, start_buttons
 import voice
@@ -71,6 +73,8 @@ class Helmet:
         self.alerts_sent_to_earth = set()
         self.crew = (mission.meta.get("crew") or ["EV1"])[0]
         self.log = EvaLog(mission.meta, mission.waypoints, self.sim.total)       # habitat black box
+        self.store = TelemetryStore(delay_s=self.earth.delay_s)                  # TigerData, on Earth
+        self.log.on_event = self.store.event
         self.log.event(0, "start", "EVA started at the habitat")
         self.mission_control = MissionControl()                                   # Gemini, on Earth
         self.latest_report = None
@@ -433,6 +437,8 @@ class Helmet:
             self.alerts_sent_to_earth &= active
             if not self.sim.paused:
                 self.log.sample(self.sim_elapsed_min, st)
+            if not self.log.complete:
+                self.store.record(self.log.id, self.sim_elapsed_min, st)      # TigerData telemetry (every 2 s)
             await self.broadcast(st)
 
 
@@ -484,7 +490,22 @@ async def api_eva(request):
     h: Helmet = request.app["helmet"]
     mc = h.mission_control
     return web.json_response({"log": h.log.summary(), "state": h.state(), "report": h.latest_report,
-                              "gemini": {"live": mc.live, "model": mc.model}, "earth_delay_s": round(h.earth.delay_s())})
+                              "gemini": {"live": mc.live, "model": mc.model}, "earth_delay_s": round(h.earth.delay_s()),
+                              "tigerdata": h.store.info()})
+
+
+async def api_telemetry(request):
+    """Charts data from TigerData: time_bucket() over the current (or a given) EVA."""
+    h: Helmet = request.app["helmet"]
+    if not h.store.info()["connected"]:
+        return web.json_response({"error": f"TigerData {h.store.status}", "series": []})
+    eva_id = request.query.get("eva_id") or h.log.id
+    bucket = max(2, min(3600, int(request.query.get("bucket", "10"))))
+    try:
+        return web.json_response({"eva_id": eva_id, "bucket_s": bucket, "series": await h.store.series(eva_id, bucket),
+                                  "evas": await h.store.evas()})
+    except Exception as e:
+        return web.json_response({"error": str(e)[:200], "series": []}, status=502)
 
 
 async def api_report(request):
@@ -541,12 +562,16 @@ async def on_startup(app):
     helmet.buttons = [] if helmet.arduino else start_buttons(helmet.on_button)
     app["loop_task"] = asyncio.create_task(helmet.run())
     app["earth_task"] = asyncio.create_task(helmet.earth.run(helmet.http))
+    app["store_task"] = asyncio.create_task(helmet.store.run())
     app["watch_task"] = asyncio.create_task(watch_hud(helmet)) if app["dev"] else None
 
 
 async def on_cleanup(app):
     app["loop_task"].cancel()
     app["earth_task"].cancel()
+    app["store_task"].cancel()
+    if helmet_conn := app["helmet"].store.conn:
+        await helmet_conn.close()
     if app["watch_task"]:
         app["watch_task"].cancel()
     await app["helmet"].http.close()
@@ -573,11 +598,14 @@ def main():
     app.router.add_get("/api/eva", api_eva)
     app.router.add_post("/api/report", api_report)
     app.router.add_post("/api/ask", api_ask)
+    app.router.add_get("/api/telemetry", api_telemetry)
     app.router.add_static("/hud/", ROOT / "hud")
     app.router.add_static("/mission/", mission.folder)
     app.on_startup.append(on_startup)
     app.on_cleanup.append(on_cleanup)
     print(f"Mangal Yatra HUD: http://localhost:{args.port}  (mission: {mission.meta['name']})")
+    if sys.platform == "win32":     # the async Postgres driver (TigerData) needs the selector event loop on Windows
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     web.run_app(app, port=args.port, print=None)
 
 

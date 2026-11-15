@@ -37,6 +37,10 @@
   #qa .q { color: var(--c); margin-top: 10px; } #qa .a { margin: 2px 0 0 0; }
   .badge { border: 1px solid var(--line); border-radius: 12px; padding: 2px 10px; font-size: 12px; }
   .live { color: var(--g); border-color: var(--g); } .off { color: var(--w); border-color: var(--w); }
+  #chart { width: 100%; height: auto; display: block; }
+  #chart .grid line { stroke: var(--line); } #chart text { fill: var(--dim); font: 10px var(--font); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin-top: 4px; }
+  .card h2 .badge { margin-left: 6px; text-transform: none; letter-spacing: 0; }
 </style>
 </head>
 <body>
@@ -56,6 +60,12 @@
         <div class="stat"><b id="bat">--</b><span>suit battery %</span></div>
         <div class="stat"><b id="next">--</b><span>next stop</span></div>
       </div>
+    </section>
+    <section class="card">
+      <h2>Telemetry &middot; TigerData <span class="badge" id="tiger">--</span></h2>
+      <svg id="chart" viewBox="0 0 400 170" role="img" aria-label="Oxygen and battery over the EVA"></svg>
+      <div class="legend"><span style="color:var(--c)">&#9644; O&#8322; minutes</span> <span style="color:var(--g)">&#9476; battery %</span>
+        <span class="by" id="tigerInfo"></span></div>
     </section>
     <section class="card">
       <h2>EVA log &middot; <span id="evaId"></span></h2>
@@ -115,6 +125,39 @@
     } catch (e) { /* habitat offline: keep the last data on screen */ }
   }
   setInterval(refresh, 3000); refresh();
+
+  // ---------- telemetry chart from TigerData (time_bucket over the EVA) ----------
+  function drawChart(series) {
+    const W = 400, H = 170, L = 34, R = 34, T = 8, B = 22, svg = $("chart");
+    if (!series.length) { svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle">No telemetry in TigerData yet</text>`; return; }
+    const tMax = Math.max(1, ...series.map((p) => p.t_min || 0));
+    const o2Max = Math.max(60, ...series.map((p) => p.o2_min || 0));
+    const x = (t) => L + (t / tMax) * (W - L - R);
+    const yO = (v) => T + (1 - v / o2Max) * (H - T - B), yB = (v) => T + (1 - v / 100) * (H - T - B);
+    const path = (key, y) => series.filter((p) => p[key] != null).map((p, i) => `${i ? "L" : "M"}${x(p.t_min).toFixed(1)},${y(p[key]).toFixed(1)}`).join("");
+    let grid = "";
+    for (let i = 0; i <= 4; i++) {
+      const gy = T + i * (H - T - B) / 4;
+      grid += `<line x1="${L}" x2="${W - R}" y1="${gy}" y2="${gy}"/>` +
+              `<text x="${L - 4}" y="${gy + 3}" text-anchor="end">${Math.round(o2Max * (1 - i / 4))}</text>` +
+              `<text x="${W - R + 4}" y="${gy + 3}">${100 - i * 25}%</text>`;
+    }
+    svg.innerHTML = `<g class="grid">${grid}</g>` +
+      `<text x="${L}" y="${H - 6}">t+0</text><text x="${W - R}" y="${H - 6}" text-anchor="end">t+${Math.round(tMax)} min</text>` +
+      `<path d="${path("battery_pct", yB)}" fill="none" stroke="var(--g)" stroke-width="2" stroke-dasharray="5 4"/>` +
+      `<path d="${path("o2_min", yO)}" fill="none" stroke="var(--c)" stroke-width="2.5"/>`;
+  }
+  async function refreshTelemetry() {
+    try {
+      const [eva, tel] = await Promise.all([fetch("/api/eva").then((r) => r.json()), fetch("/api/telemetry?bucket=10").then((r) => r.json())]);
+      const t = eva.tigerdata;
+      $("tiger").textContent = !t.enabled ? "not configured" : t.connected ? "connected" : t.status;
+      $("tiger").className = "badge " + (t.connected ? "live" : "off");
+      $("tigerInfo").textContent = t.enabled ? `${t.uploaded} readings stored · ${t.in_transit} in transit from Mars` : "";
+      drawChart(tel.series || []);
+    } catch (e) { /* keep last chart */ }
+  }
+  setInterval(refreshTelemetry, 5000); refreshTelemetry();
 
   $("btnReport").addEventListener("click", async () => {
     $("btnReport").disabled = true; $("reportText").innerHTML = '<span class="by">Gemini is reading the EVA log…</span>';

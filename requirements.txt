@@ -1,6 +1,7 @@
 aiohttp>=3.9
 pyserial
 numpy
+psycopg[binary]  # TigerData telemetry (optional)
 pillow          # pipeline only: tile colouring
 # Pi only: adafruit-circuitpython-bno08x adafruit-circuitpython-bme280 vosk sounddevice piper-tts
 # Pipeline only: GDAL (conda install -c conda-forge gdal)

@@ -123,6 +123,18 @@ mission report at Mission Control, and the report travels back to the wrist disp
   `GEMINI_API_KEY=...` (git-ignored). Model: `GEMINI_MODEL`, default `gemini-3.5-flash-lite`.
 - Without a key, a plain offline summary is produced instead, so the demo always works.
 
+## EVA telemetry in TigerData
+
+Every 2 seconds the habitat records a reading (oxygen, battery, distance, position, heading, alerts) and every
+EVA event. Each one is held back by the Earth-Mars radio delay ("store and forward"), then written in batches
+to **TigerData** (TimescaleDB on Tiger Cloud) in two hypertables, `eva_telemetry` and `eva_events`.
+Mission Control charts oxygen and battery over the whole EVA with `time_bucket()` queries
+(`/api/telemetry`). If the database is unreachable, readings wait in the buffer and upload later.
+
+Setup: sign up via **mlh.link/tigerdata-quickstart** (free credits, no card), create a service, and put its
+connection string in `backend/secrets.env` as `TIGER_DATABASE_URL=postgres://...` (git-ignored).
+Needs `pip install "psycopg[binary]"`.
+
 ## Earth link: Mission Control by SMS (Twilio)
 
 The helmet works offline; the habitat relays messages to Earth through **Twilio**, held back by the real

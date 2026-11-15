@@ -15,6 +15,7 @@ SAMPLE_EVERY_MIN = 5          # one trend sample per 5 mission minutes
 class EvaLog:
     def __init__(self, mission_meta, waypoints, route_m):
         self.meta, self.waypoints, self.route_m = mission_meta, waypoints, route_m
+        self.on_event = None          # optional callback(eva_id, event), e.g. TigerData upload
         self.start()
 
     def start(self):
@@ -27,6 +28,8 @@ class EvaLog:
     def event(self, t_min, kind, text, **data):
         self.events.append({"t_min": round(t_min, 1), "kind": kind, "text": text, **data})
         self.save()
+        if self.on_event:
+            self.on_event(self.id, self.events[-1])
 
     def sample(self, t_min, st):
         if t_min - self._last_sample_min < SAMPLE_EVERY_MIN:
