@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control</title>
+<style>
+  :root { --bg: #050b10; --panel: #0b1720; --line: #1d3442; --c: #39f3ff; --g: #5dff8f; --w: #ffc93c; --r: #ff4d4d;
+          --text: #e8f6f8; --dim: #7fa9b0; --font: "DejaVu Sans Mono", Consolas, monospace; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 var(--font); }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 18px; color: var(--c); letter-spacing: .08em; }
+  header .sub { color: var(--dim); }
+  main { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.4fr); gap: 16px; padding: 16px 20px; }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; padding: 12px 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); font-weight: normal; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .stat b { display: block; font-size: 22px; color: #fff; }
+  .stat span { color: var(--dim); font-size: 12px; }
+  #events { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow-y: auto; }
+  #events li { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  #events .t { color: var(--dim); display: inline-block; min-width: 70px; }
+  .k-alert, .k-sos { color: var(--r); } .k-arrival, .k-complete { color: var(--g); } .k-message, .k-report { color: var(--c); }
+  button { font: inherit; background: var(--c); color: #001018; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: bold; }
+  button:disabled { opacity: .5; cursor: wait; }
+  #reportText { white-space: normal; min-height: 60px; }
+  #reportText .rh { color: var(--c); font-weight: bold; margin: 10px 0 2px; text-transform: uppercase; font-size: 12px; letter-spacing: .1em; }
+  #reportText .rb { padding-left: 6px; }
+  .by { color: var(--dim); font-size: 12px; }
+  form { display: flex; gap: 8px; margin-top: 8px; }
+  input { flex: 1; min-width: 0; font: inherit; color: #fff; background: #02080c; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chips button { background: transparent; color: var(--c); border: 1px solid var(--line); font-weight: normal; padding: 4px 10px; }
+  #qa { margin-top: 10px; }
+  #qa .q { color: var(--c); margin-top: 10px; } #qa .a { margin: 2px 0 0 0; }
+  .badge { border: 1px solid var(--line); border-radius: 12px; padding: 2px 10px; font-size: 12px; }
+  .live { color: var(--g); border-color: var(--g); } .off { color: var(--w); border-color: var(--w); }
+</style>
+</head>
+<body>
+<header>
+  <h1>MISSION CONTROL &middot; EARTH</h1>
+  <span class="sub" id="mission">--</span>
+  <span class="badge" id="gem">Gemini: --</span>
+  <span class="sub">Signal delay Mars&harr;Earth: <b id="delay">--</b></span>
+</header>
+<main>
+  <div>
+    <section class="card">
+      <h2>EVA status (from the habitat downlink)</h2>
+      <div class="stats">
+        <div class="stat"><b id="walked">--</b><span>meters walked</span></div>
+        <div class="stat"><b id="o2">--</b><span>O&#8322; minutes left</span></div>
+        <div class="stat"><b id="bat">--</b><span>suit battery %</span></div>
+        <div class="stat"><b id="next">--</b><span>next stop</span></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>EVA log &middot; <span id="evaId"></span></h2>
+      <ul id="events"></ul>
+    </section>
+  </div>
+  <div>
+    <section class="card">
+      <h2>Mission report</h2>
+      <button id="btnReport">Generate report with Gemini</button>
+      <p class="by" id="reportBy"></p>
+      <div id="reportText"><span class="by">No report yet. Generate one, or it arrives when the crew finishes the EVA.</span></div>
+    </section>
+    <section class="card">
+      <h2>Ask about this EVA</h2>
+      <div class="chips">
+        <button data-q="How did oxygen use compare to the plan?">O&#8322; vs plan</button>
+        <button data-q="Which science stops were reached, and which are left?">Science stops</button>
+        <button data-q="Were there any safety events?">Safety events</button>
+        <button data-q="Should the crew continue or turn back now? Explain from the numbers.">Continue or turn back?</button>
+      </div>
+      <form id="askForm"><input id="askInput" autocomplete="off" placeholder="e.g. How far did EV1 walk in the last hour?"><button>Ask</button></form>
+      <div id="qa"></div>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const md = (t) => esc(t).split("\n").map((l) => /^#{1,3}\s/.test(l) ? `<div class="rh">${l.replace(/^#{1,3}\s/, "")}</div>`
+    : /^\s*[-*]\s/.test(l) ? `<div class="rb">• ${l.replace(/^\s*[-*]\s/, "")}</div>` : l.trim() ? `<div>${l}</div>` : "")
+    .join("").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  let shownReport = null;
+
+  function showReport(r) {
+    if (!r || r.created === shownReport) return;
+    shownReport = r.created;
+    $("reportBy").textContent = `${r.eva_id} · ${r.by} · ${new Date(r.created * 1000).toLocaleTimeString()}`;
+    $("reportText").innerHTML = md(r.text);
+  }
+
+  async function refresh() {
+    try {
+      const d = await (await fetch("/api/eva")).json();
+      const s = d.state, log = d.log;
+      $("mission").textContent = `${log.mission} · ${log.site}`;
+      $("gem").textContent = d.gemini.live ? `Gemini: ${d.gemini.model}` : "Gemini: not configured";
+      $("gem").className = "badge " + (d.gemini.live ? "live" : "off");
+      $("delay").textContent = d.earth_delay_s < 90 ? `${d.earth_delay_s} s (demo)` : `${(d.earth_delay_s / 60).toFixed(1)} min`;
+      $("walked").textContent = s.walked_m; $("o2").textContent = s.suit.o2_min; $("bat").textContent = s.suit.battery_pct;
+      $("next").textContent = s.next_wp ? s.next_wp.name : "done";
+      $("evaId").textContent = log.eva_id;
+      $("events").innerHTML = log.events.slice().reverse().map((e) =>
+        `<li class="k-${esc(e.kind)}"><span class="t">t+${esc(e.t_min)}m</span> ${esc(e.text)}</li>`).join("");
+      showReport(d.report);
+    } catch (e) { /* habitat offline: keep the last data on screen */ }
+  }
+  setInterval(refresh, 3000); refresh();
+
+  $("btnReport").addEventListener("click", async () => {
+    $("btnReport").disabled = true; $("reportText").innerHTML = '<span class="by">Gemini is reading the EVA log…</span>';
+    try { showReport(await (await fetch("/api/report", { method: "POST" })).json()); }
+    catch (e) { $("reportText").textContent = "Report failed: " + e; }
+    $("btnReport").disabled = false;
+  });
+
+  async function ask(q) {
+    const item = document.createElement("div");
+    item.innerHTML = `<div class="q">Q: ${esc(q)}</div><div class="a by">Gemini is thinking…</div>`;
+    $("qa").prepend(item);
+    try {
+      const r = await (await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" },
+                                                 body: JSON.stringify({ question: q }) })).json();
+      item.querySelector(".a").className = "a";
+      item.querySelector(".a").textContent = r.answer || r.error || "No answer.";
+    } catch (e) { item.querySelector(".a").textContent = "Failed: " + e; }
+  }
+  $("askForm").addEventListener("submit", (e) => { e.preventDefault(); const q = $("askInput").value.trim(); if (q) { ask(q); $("askInput").value = ""; } });
+  document.querySelectorAll(".chips button").forEach((b) => b.addEventListener("click", () => ask(b.dataset.q)));
+})();
+</script>
+</body>
+</html>

@@ -42,6 +42,11 @@
 
   <div id="alerts"></div>
   <div id="earthMsg" class="hidden" role="status"></div>
+  <section id="report" class="hidden panel" role="dialog" aria-label="Mission report from Earth">
+    <div class="label">&#128196; Mission report from Earth &middot; <span id="reportBy"></span></div>
+    <div id="reportText"></div>
+    <div class="small dim">Tap to close</div>
+  </section>
 
   <footer id="bottom">
     <div id="voice"><span id="mic">&#9679;</span> <span id="voiceText">Push to talk, or press Enter to type a command</span></div>
@@ -69,7 +74,7 @@
     <div>+ / - zoom &middot; 1-5 toggle layers</div>
     <div>Enter type a voice command</div>
     <div>S SOS &middot; M mirror for visor &middot; H help</div>
-    <div>E test a message from Earth</div>
+    <div>E test a message from Earth &middot; G mission report</div>
   </div>
   <div id="conn">Connecting to helmet...</div>
 </div>

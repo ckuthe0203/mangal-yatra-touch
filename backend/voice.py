@@ -14,7 +14,7 @@ import subprocess
 import threading
 
 LAYERS = ["imagery", "slope", "hazards", "route", "science"]
-ACTIONS = ["toggle_layer", "restart", "earth_status", "next_waypoint", "zoom_in", "zoom_out", "status", "where_next", "where_am_i",
+ACTIONS = ["toggle_layer", "restart", "report", "earth_status", "next_waypoint", "zoom_in", "zoom_out", "status", "where_next", "where_am_i",
            "home", "turn_back", "danger", "mission", "conditions", "pause", "resume", "sos", "recenter", "mirror"]
 
 # ---------- 1. Keyword rules (instant, always available) ----------
@@ -22,6 +22,7 @@ ACTIONS = ["toggle_layer", "restart", "earth_status", "next_waypoint", "zoom_in"
 _RULES = [
     (r"\b(sos|emergency|mayday|help me)\b", {"action": "sos"}),
     (r"\b(restart|reset|start over|start again|from the (beginning|start))\b", {"action": "restart"}),
+    (r"\b(mission|eva|walk) report\b|\bdebrief\b|\breport\b", {"action": "report"}),
     (r"\bturn (back|around)\b|\bhow long can (we|i)\b|\bstay out\b|\btime (left|remaining)\b|\bhow much time\b",
      {"action": "turn_back"}),
     (r"\b(base|home|habitat|hab|lander)\b", {"action": "home"}),

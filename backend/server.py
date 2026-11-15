@@ -17,6 +17,8 @@ from aiohttp import web, ClientSession, WSMsgType
 
 from geo import distance_m, distance_to_polygon_m, compass_label, bearing_deg
 from earth_link import EarthLink
+from eva_log import EvaLog, LOG_DIR
+from mission_control import MissionControl
 from sim import RouteSimulator
 from sensors import Sensors, start_buttons
 import voice
@@ -68,6 +70,11 @@ class Helmet:
         self.earth = EarthLink(on_delivered=self.earth_delivered, on_status=self.earth_status)
         self.alerts_sent_to_earth = set()
         self.crew = (mission.meta.get("crew") or ["EV1"])[0]
+        self.log = EvaLog(mission.meta, mission.waypoints, self.sim.total)       # habitat black box
+        self.log.event(0, "start", "EVA started at the habitat")
+        self.mission_control = MissionControl()                                   # Gemini, on Earth
+        self.latest_report = None
+        self.report_task = None
 
     # ---------- state ----------
     def heading(self, route_bearing):
@@ -207,7 +214,11 @@ class Helmet:
             self.sim_elapsed_min = 0.0          # fresh oxygen and battery
             self.sos = False
             self.last_alert_said.clear()
+            self.log.start()
+            self.log.event(0, "start", "EVA started at the habitat")
             await self.say("Restarting from the habitat.")
+        elif a == "report":
+            await self.request_report()
         elif a == "next_waypoint":
             wp = self.sim.skip_to_next()
             await self.say(f"Skipping to {wp['name']}." if wp else "No more stops.")
@@ -257,6 +268,7 @@ class Helmet:
             await self.say("Resuming.")
         elif a == "sos":
             self.sos = not self.sos
+            self.log.event(self.sim_elapsed_min, "sos", ("SOS raised, " if self.sos else "SOS cancelled, ") + self.where_words())
             if self.sos:
                 p = st["pos"]
                 await self.earth.send(f"SOS from {self.crew}, {self.where_words()}. Position {p[1]:.4f} N {p[0]:.4f} E. "
@@ -270,6 +282,7 @@ class Helmet:
             text = (cmd.get("text") or "").strip()
             if text:
                 await self.earth.send(f"{self.crew}: {text}")
+                self.log.event(self.sim_elapsed_min, "message", f"Crew to Earth: {text}")
                 await self.say(f"Sending to Earth. Arrives in {self.delay_words()}.")
             else:
                 await self.say("What should I tell Mission Control?")
@@ -312,6 +325,39 @@ class Helmet:
     async def earth_status(self, status):
         await self.broadcast({"type": "earth", **status})
 
+    # ---------- Mission report (Gemini at Mission Control on Earth) ----------
+    async def request_report(self):
+        """The EVA log travels to Earth, Gemini writes the report, the report travels back to Mars."""
+        if self.report_task and not self.report_task.done():
+            await self.say("A mission report is already on its way.")
+            return
+        delay = self.earth.delay_s()
+        await self.say(f"Sending the EVA log to Earth. Report back in about {self.delay_words(2 * delay + 5)}.")
+        self.report_task = asyncio.create_task(self._report_flow(delay))
+
+    async def _report_flow(self, delay):
+        try:
+            await self.broadcast({"type": "report_status", "stage": "to_earth", "eta_s": round(delay)})
+            await asyncio.sleep(delay)                                      # log crossing to Earth
+            await self.broadcast({"type": "report_status", "stage": "writing"})
+            log = self.log.summary()
+            text, by = await self.mission_control.report(self.http, log)
+            self.latest_report = {"eva_id": log["eva_id"], "text": text, "by": by, "created": time.time()}
+            LOG_DIR.mkdir(exist_ok=True)
+            (LOG_DIR / f"{log['eva_id']}_report.md").write_text(f"# {log['eva_id']} mission report\n_{by}_\n\n{text}\n",
+                                                                encoding="utf-8")
+            await self.broadcast({"type": "report_status", "stage": "to_mars", "eta_s": round(delay)})
+            await asyncio.sleep(delay)                                      # report crossing back to Mars
+            await self.broadcast({"type": "report", **self.latest_report})
+            self.log.event(self.sim_elapsed_min, "report", f"Mission report received from Earth ({by})")
+            await self.say("Mission report from Earth received.")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print(f"[mission-control] report failed: {e}")
+            await self.broadcast({"type": "report_status", "stage": "failed"})
+            await self.say("The mission report could not be generated.")
+
     async def handle_text(self, text):
         await self.broadcast({"type": "heard", "text": text})
         cmd, how = await voice.understand(text, self.http)
@@ -347,12 +393,20 @@ class Helmet:
             await asyncio.sleep(1 / TICK_HZ)
             now = time.monotonic()
             dt, last = now - last, now
-            self.sim_elapsed_min += dt * self.sim.time_scale / 60
+            if self.sim.s < self.sim.total:          # EVA clock stops once the planned route is complete,
+                self.sim_elapsed_min += dt * self.sim.time_scale / 60   # so O2 doesn't drain to 0 afterwards
             reached = self.sim.step(dt)
             if reached:
                 await self.say(f"Arrived at {reached['name']}.")
+                o2_now = self.consumables()[0]
+                self.log.event(self.sim_elapsed_min, "arrival", f"Arrived at {reached['name']}", stop=reached["name"],
+                               walked_m=round(self.sim.s), o2_min=o2_now)
                 if reached.get("kind") == "science":
                     await self.earth.send(f"{self.crew} arrived at {reached['name']}. {reached.get('task', '')}".strip())
+                if self.sim.next_waypoint() is None and not self.log.complete:   # last stop: EVA done, ask Earth for the report
+                    self.log.complete = True
+                    self.log.event(self.sim_elapsed_min, "complete", "All planned stops reached", walked_m=round(self.sim.s))
+                    await self.request_report()
             if self.arduino and now - last_cpu_sent > 1:
                 last_cpu_sent = now
                 self.arduino.send_cpu_temp()       # Arduino sets the helmet fan speed from this
@@ -372,9 +426,13 @@ class Helmet:
                 if al["id"] not in self.alerts_sent_to_earth and al["id"] != "sos":   # tell Earth once per alert
                     self.alerts_sent_to_earth.add(al["id"])
                     await self.earth.send(f"ALERT from {self.crew}: {al['msg']}. {self.where_words()}.")
+                    self.log.event(self.sim_elapsed_min, "alert", al["msg"], where=self.where_words(),
+                                   o2_min=st["suit"]["o2_min"])
             for gone in set(self.last_alert_said) - active:   # cleared alerts are announced afresh next time
                 del self.last_alert_said[gone]
             self.alerts_sent_to_earth &= active
+            if not self.sim.paused:
+                self.log.sample(self.sim_elapsed_min, st)
             await self.broadcast(st)
 
 
@@ -393,6 +451,7 @@ async def ws_handler(request):
         "stt": bool(helmet.ptt.ok),
         "server_id": SERVER_ID,
         "earth": helmet.earth.status(),
+        "report": helmet.latest_report,
     }))
     try:
         async for msg in ws:
@@ -414,6 +473,38 @@ async def ws_handler(request):
 
 async def index(request):
     return web.FileResponse(ROOT / "hud" / "index.html")
+
+
+# ---------- Mission Control (Earth side): EVA log, Gemini report and Q&A ----------
+async def mission_control_page(request):
+    return web.FileResponse(ROOT / "hud" / "mission-control.html")
+
+
+async def api_eva(request):
+    h: Helmet = request.app["helmet"]
+    mc = h.mission_control
+    return web.json_response({"log": h.log.summary(), "state": h.state(), "report": h.latest_report,
+                              "gemini": {"live": mc.live, "model": mc.model}, "earth_delay_s": round(h.earth.delay_s())})
+
+
+async def api_report(request):
+    h: Helmet = request.app["helmet"]
+    log = h.log.summary()
+    text, by = await h.mission_control.report(h.http, log)
+    h.latest_report = {"eva_id": log["eva_id"], "text": text, "by": by, "created": time.time()}
+    return web.json_response(h.latest_report)
+
+
+async def api_ask(request):
+    h: Helmet = request.app["helmet"]
+    question = (await request.json()).get("question", "").strip()
+    if not question:
+        return web.json_response({"error": "empty question"}, status=400)
+    try:
+        answer, by = await h.mission_control.ask(h.http, question, h.log.summary())
+    except Exception as e:
+        return web.json_response({"error": str(e)[:300]}, status=502)
+    return web.json_response({"answer": answer, "by": by})
 
 
 @web.middleware
@@ -478,6 +569,10 @@ def main():
     app["helmet"] = Helmet(mission, args.time_scale, args.arduino)
     app.router.add_get("/", index)
     app.router.add_get("/ws", ws_handler)
+    app.router.add_get("/mission-control", mission_control_page)
+    app.router.add_get("/api/eva", api_eva)
+    app.router.add_post("/api/report", api_report)
+    app.router.add_post("/api/ask", api_ask)
     app.router.add_static("/hud/", ROOT / "hud")
     app.router.add_static("/mission/", mission.folder)
     app.on_startup.append(on_startup)

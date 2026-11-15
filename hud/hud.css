@@ -103,3 +103,11 @@ body.device #help { display: none !important; }
   color: #fff; font-size: 18px; font-weight: bold; box-shadow: 0 0 18px rgba(57, 243, 255, .45); cursor: pointer; z-index: 5; }
 #earthMsg .label { color: var(--c); margin: 0 0 6px; }
 #earthLine { max-width: 220px; }
+
+/* Mission report from Earth (Gemini) - tap to close */
+#report { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); width: min(620px, 92vw);
+  max-height: 70vh; overflow-y: auto; z-index: 6; background: rgba(0, 12, 20, .95); border: 2px solid var(--g);
+  box-shadow: 0 0 18px rgba(93, 255, 143, .35); color: #fff; font-size: 15px; line-height: 1.45; cursor: pointer; }
+#report .label { color: var(--g); }
+#report .rh { color: var(--c); font-weight: bold; margin: 10px 0 2px; text-transform: uppercase; font-size: 13px; letter-spacing: .08em; }
+#report .rb { padding-left: 6px; }

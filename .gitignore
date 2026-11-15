@@ -8,3 +8,6 @@ __pycache__/
 # large raw NASA data (re-create with pipeline/fetch_hirise.py) and pipeline scratch
 raw/
 data/*/_work/
+
+# EVA logs and mission reports (created at runtime)
+logs/

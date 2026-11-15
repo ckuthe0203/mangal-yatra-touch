@@ -184,6 +184,37 @@
     $("earthLine").textContent = "📡 " + parts.join(" · ");
   }
   setInterval(drawEarthLine, 1000);
+
+  // ---------- mission report (written by Gemini at Mission Control on Earth) ----------
+  let reportStage = null;
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function mdToHtml(md) {                       // tiny, safe Markdown: escape first, then headings, bullets, bold
+    return esc(md).split("\n").map((l) => {
+      if (/^#{1,3}\s/.test(l)) return `<div class="rh">${l.replace(/^#{1,3}\s/, "")}</div>`;
+      if (/^\s*[-*]\s/.test(l)) return `<div class="rb">• ${l.replace(/^\s*[-*]\s/, "")}</div>`;
+      return l.trim() ? `<div>${l}</div>` : "";
+    }).join("").replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  }
+  function setReportStatus(m) {
+    reportStage = m.stage === "failed" ? null : { ...m, until: Date.now() + (m.eta_s || 0) * 1000 };
+    drawReportStatus();
+  }
+  function drawReportStatus() {
+    if (!reportStage) return;
+    const left = mmss(Math.max(0, (reportStage.until - Date.now()) / 1000));
+    const txt = { to_earth: `📄 EVA log → Earth ${left}`, writing: "📄 Gemini is writing the report…",
+                  to_mars: `📄 Report → Mars ${left}` }[reportStage.stage];
+    if (txt) $("voiceText").textContent = txt;
+  }
+  setInterval(drawReportStatus, 1000);
+  function showReport(r) {
+    reportStage = null;
+    $("reportBy").textContent = r.by || "";
+    $("reportText").innerHTML = mdToHtml(r.text || "");
+    $("report").classList.remove("hidden");
+    $("voiceText").textContent = "📄 Mission report received. Tap to close";
+  }
+  $("report").addEventListener("click", () => $("report").classList.add("hidden"));
   let earthTimer;
   function showEarthMsg(m) {
     const el = $("earthMsg");
@@ -221,6 +252,8 @@
         case "listening": $("mic").classList.toggle("on", msg.on); if (msg.on) $("voiceText").textContent = "Listening..."; break;
         case "earth": setEarth(msg); break;
         case "earth_msg": showEarthMsg(msg); break;
+        case "report_status": setReportStatus(msg); break;
+        case "report": showReport(msg); break;
         case "command":
           if (msg.action === "toggle_layer") toggleLayer(msg.layer);
           else if (msg.action === "zoom_in") zoom = Math.min(19, zoom + 0.75);
@@ -253,6 +286,7 @@
     else if (k === "r" || k === "R") cmd("recenter");
     else if (k === "0") cmd("restart");
     else if (k === "e" || k === "E") send({ type: "earth_test" });
+    else if (k === "g" || k === "G") cmd("report");
     else if (k === "m" || k === "M") { mirrorIdx = (mirrorIdx + 1) % mirrorModes.length; applyMirror(); }
     else if (k === "h" || k === "H") $("help").classList.toggle("hidden");
     else if (k >= "1" && k <= "5") toggleLayer(LAYER_ORDER[+k - 1]);

@@ -110,6 +110,19 @@ Any hazards you trace by hand in QGIS (such as boulder fields seen in HiRISE) ca
 
 > The sample `data/jezero` package uses illustrative coordinates and hazard outlines near the Perseverance landing site, so the demo works before the pipeline has run. Replace it with real pipeline output before you submit.
 
+## Mission Control on Earth: Gemini EVA reports
+
+The wrist unit never needs the internet. The habitat keeps an **EVA log** (stops, alerts, SOS, messages, oxygen and
+battery trend; `logs/`). The log is sent to Earth with the Mars radio delay, **Gemini** (Google's Gemini API) writes the
+mission report at Mission Control, and the report travels back to the wrist display.
+
+- On the wrist: say **"mission report"** (or press **G**). It also starts automatically when the last stop is reached.
+- On Earth: open **http://localhost:8090/mission-control** for live EVA status, the event log, the report, and
+  questions about the EVA ("How did oxygen use compare to plan?"). Gemini is told to use only numbers from the log.
+- Setup: get a free key at **aistudio.google.com** -> *Get API key*, put it in `backend/secrets.env` as
+  `GEMINI_API_KEY=...` (git-ignored). Model: `GEMINI_MODEL`, default `gemini-3.5-flash-lite`.
+- Without a key, a plain offline summary is produced instead, so the demo always works.
+
 ## Earth link: Mission Control by SMS (Twilio)
 
 The helmet works offline; the habitat relays messages to Earth through **Twilio**, held back by the real

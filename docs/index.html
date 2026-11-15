@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mangal Yatra · Mars EVA map on your wrist</title>
+<meta name="description" content="Mangal Yatra: an offline Mars EVA survival map on a wrist-worn Raspberry Pi, built from real NASA HiRISE, THEMIS and Perseverance data. NASA Space Apps 2026.">
+<meta property="og:title" content="Mangal Yatra · Mars EVA map on your wrist">
+<meta property="og:description" content="No GPS. No internet. 11 minutes from Earth. A survival map built from real NASA data.">
+<meta property="og:image" content="img/route-map.jpg">
+<style>
+  :root { --bg: #04080c; --panel: #0a141c; --line: #1b3140; --c: #39f3ff; --g: #5dff8f; --w: #ffc93c; --r: #ff6b5a;
+          --text: #e9f5f7; --dim: #8fb2b9; --mars: #d9733f; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+          --mono: "DejaVu Sans Mono", Consolas, monospace; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 var(--font); }
+  a { color: var(--c); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+  header.hero { position: relative; min-height: 88vh; display: flex; align-items: flex-end; overflow: hidden;
+    background: linear-gradient(180deg, rgba(4,8,12,.15) 0%, rgba(4,8,12,.55) 55%, var(--bg) 100%), url(img/route-map.jpg) center/cover; }
+  .hero .wrap { padding-bottom: 56px; }
+  .kicker { font: 600 13px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--c); }
+  h1 { font-size: clamp(42px, 8vw, 84px); line-height: 1; margin: 14px 0 12px; letter-spacing: -.02em; }
+  h1 span { color: var(--mars); }
+  .lede { font-size: clamp(18px, 2.6vw, 24px); max-width: 720px; color: #fff; margin: 0 0 22px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+  .tags span { font: 13px var(--mono); border: 1px solid rgba(57,243,255,.5); border-radius: 20px; padding: 4px 12px; background: rgba(0,0,0,.45); }
+  .btn { display: inline-block; background: var(--c); color: #001018; font-weight: 700; text-decoration: none; padding: 12px 20px; border-radius: 10px; margin: 0 10px 10px 0; }
+  .btn.ghost { background: transparent; color: var(--c); border: 1px solid var(--c); }
+  section { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: clamp(26px, 4vw, 36px); margin: 0 0 8px; }
+  .sub { color: var(--dim); margin: 0 0 28px; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 18px 14px; }
+  .card h3 { margin: 0 0 6px; font-size: 18px; }
+  .card p { margin: 0; color: var(--dim); font-size: 15.5px; }
+  .card .ico { font-size: 24px; display: block; margin-bottom: 6px; }
+  figure { margin: 0; }
+  figure img { width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); }
+  figcaption { color: var(--dim); font-size: 14.5px; margin-top: 8px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .two { grid-template-columns: 1fr; } section { padding: 48px 0; } }
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; }
+  @media (max-width: 760px) { .flow { grid-template-columns: 1fr; } .flow .arrow { transform: rotate(90deg); justify-self: center; } }
+  .flow .side { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .flow .side h3 { margin: 0 0 8px; }
+  .flow .mars h3 { color: var(--mars); } .flow .earth h3 { color: var(--c); }
+  .flow ul { margin: 0; padding-left: 18px; color: var(--dim); font-size: 15.5px; }
+  .arrow { align-self: center; font: 600 13px var(--mono); color: var(--w); text-align: center; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; }
+  .tablewrap { overflow-x: auto; }
+  .stat { font: 700 clamp(28px, 4vw, 40px)/1 var(--mono); color: #fff; }
+  .stat small { display: block; font: 14px var(--font); color: var(--dim); margin-top: 6px; }
+  .q { font: 15px var(--mono); color: var(--c); }
+  .a { font: 15px var(--mono); color: #fff; margin: 2px 0 12px; }
+  .note { border-left: 3px solid var(--w); padding: 4px 14px; color: var(--dim); }
+  footer { padding: 36px 0 60px; color: var(--dim); font-size: 14px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">NASA Space Apps 2026 · Interplanetary Survival Guide: Martian Map</div>
+    <h1>Mangal <span>Yatra</span></h1>
+    <p class="lede">No GPS. No internet. Eleven minutes from Earth. A Mars EVA survival map on your wrist, built from real NASA data.</p>
+    <div class="tags"><span>HiRISE 25 cm imagery</span><span>HiRISE 1 m terrain</span><span>THEMIS</span><span>Perseverance samples</span><span>Raspberry Pi 5 · 5" wrist display</span><span>Gemini Mission Control</span></div>
+    <a class="btn" href="https://github.com/ckuthe0203/mangal-yatra-touch">View the code on GitHub</a>
+    <a class="btn ghost" href="#how">How it works</a>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>The problem</h2>
+    <p class="sub">An astronaut walking on Mars has no GPS, no compass (Mars has no global magnetic field) and no live help: a radio
+      message to Earth takes 5 to 22 minutes each way. They still need to know, every minute: where am I, what is dangerous ahead,
+      and do I have enough oxygen to get home?</p>
+    <div class="grid">
+      <div class="card"><div class="stat">3.7 km<small>planned EVA route, every step on real HiRISE terrain</small></div></div>
+      <div class="card"><div class="stat">14.7°<small>steepest point on the route; the planner never allows more than 15°</small></div></div>
+      <div class="card"><div class="stat">30<small>hazard zones found from NASA data: 28 steep slopes, 2 loose sand</small></div></div>
+      <div class="card"><div class="stat">11 min<small>radio delay to Earth today, computed from the planets' orbits</small></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="sub">A wrist-worn Raspberry Pi 5 with a 5-inch touch display guides the astronaut along a safe route. Everything runs offline on the device.</p>
+    <div class="grid">
+      <div class="card"><span class="ico">🗺️</span><h3>Real Mars map</h3><p>HiRISE 25 cm imagery of Jezero Crater with a slope layer from the 1 m HiRISE terrain model. About 220 MB, stored on the device.</p></div>
+      <div class="card"><span class="ico">⚠️</span><h3>Hazards &amp; safe route</h3><p>Ground steeper than 25° and THEMIS loose sand become hazard zones. An A* planner finds a route that stays under 15°.</p></div>
+      <div class="card"><span class="ico">🧪</span><h3>Real science stops</h3><p>Sid, Brac, Issole and Wildcat Ridge: places where Perseverance actually cored samples, located from NASA's sample list and rover positions.</p></div>
+      <div class="card"><span class="ico">🫁</span><h3>Survival math</h3><p>Oxygen and battery tracking with a turn-back rule: oxygen left must cover the walk home plus a 30-minute reserve.</p></div>
+      <div class="card"><span class="ico">🗣️</span><h3>Voice, offline</h3><p>"Where are we?", "Is there danger ahead?", "When do we turn back?" Short spoken answers built from live data.</p></div>
+      <div class="card"><span class="ico">📡</span><h3>Earth link with real delay</h3><p>SOS and messages to Mission Control are held back by the true Earth-Mars light delay for today's date.</p></div>
+      <div class="card"><span class="ico">🤖</span><h3>Gemini at Mission Control</h3><p>On Earth, Gemini turns the EVA log into a mission report and answers the team's questions, using only logged facts.</p></div>
+      <div class="card"><span class="ico">⌚</span><h3>Built for gloves</h3><p>Large touch buttons (Talk, Next, Zoom, Pause, Center, SOS) and a layout tuned for the 5" screen.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>The map, from real NASA data</h2>
+    <p class="sub">Jezero Crater, where Perseverance landed in 2021. The route starts at the real landing site and visits four real sample sites before reaching the delta front.</p>
+    <div class="two">
+      <figure><img src="img/route-map.jpg" alt="HiRISE imagery of Jezero Crater with the cyan EVA route through Habitat airlock, Sid, Brac, Issole and Wildcat Ridge" loading="lazy">
+        <figcaption>The planned EVA route through Perseverance sample sites, on HiRISE 25 cm imagery (false-colored for readability).</figcaption></figure>
+      <figure><img src="img/hazard-map.jpg" alt="Hazard map: red steep-slope zones along the delta cliff and crater rims, yellow loose-sand outlines" loading="lazy">
+        <figcaption>Hazards: red = steeper than 25° (HiRISE 1 m terrain); yellow = loose sand (THEMIS thermal inertia).</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">The wrist unit never depends on Earth. Data still goes home, slowly, the way Perseverance's does today.</p>
+    <div class="flow">
+      <div class="side mars"><h3>🔴 Mars · offline</h3><ul>
+        <li>Raspberry Pi 5 + 5" display on the wrist</li>
+        <li>Map, hazards and route preloaded (~220 MB)</li>
+        <li>Position along the route; heading from a BNO085 IMU (no magnetometer)</li>
+        <li>Offline speech (Vosk) and voice (Piper)</li>
+        <li>Habitat server keeps the EVA log</li></ul></div>
+      <div class="arrow">radio relay<br>⇄<br>11 min each way</div>
+      <div class="side earth"><h3>🌍 Earth · Mission Control</h3><ul>
+        <li>Receives SOS, alerts and the EVA log</li>
+        <li>Gemini writes the post-EVA report</li>
+        <li>Team asks questions about the walk</li>
+        <li>Report travels back to the wrist</li></ul></div>
+    </div>
+    <h3 style="margin-top:34px">Ask it anything that matters</h3>
+    <div class="two">
+      <div><div class="q">"Where are we now?"</div><div class="a">At Brac. Issole in 135 meters.</div>
+           <div class="q">"Is there any danger ahead?"</div><div class="a">All clear ahead. Nearest: steep slope, 130 meters northwest.</div></div>
+      <div><div class="q">"When do we need to turn back?"</div><div class="a">43 minutes until we turn back.</div>
+           <div class="q">"What do we do at the next stop?"</div><div class="a">Wildcat Ridge, 727 meters. Sample the delta mudstone, best place for signs of ancient life.</div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Mission Control on Earth</h2>
+    <p class="sub">After the walk, the EVA log crosses to Earth, Gemini writes the report, and it crosses back. Gemini is instructed to use only the logged numbers; when something wasn't recorded, it says so.</p>
+    <figure><img src="img/mission-control.png" alt="Mission Control dashboard with EVA status, event log and a Gemini-written mission report" loading="lazy">
+      <figcaption>A real Gemini (gemini-3.5-flash-lite) report for a complete EVA to Wildcat Ridge.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>NASA data used</h2>
+    <p class="sub">Every layer comes from a NASA mission. Our pipeline cuts out only the Jezero area, computes slope, finds hazards and plans the route.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Layer</th><th>Source</th><th>Used for</th></tr>
+      <tr><td>Imagery, 25 cm</td><td>MRO HiRISE, Mars 2020 TRN orthomosaic (USGS, DOI 10.5066/P9QJDP48)</td><td>Base map</td></tr>
+      <tr><td>Terrain, 1 m</td><td>MRO HiRISE, Mars 2020 TRN DTM mosaic (USGS, DOI 10.5066/P9REJ9JN)</td><td>Slope layer, steep-slope hazards, route planning</td></tr>
+      <tr><td>Soft ground</td><td>Mars Odyssey THEMIS-derived thermal inertia of Jezero (Zenodo 4931348)</td><td>Loose-sand hazards</td></tr>
+      <tr><td>Overview imagery</td><td>MRO CTX mosaic (NASA/JPL/MSSS, Caltech Murray Lab)</td><td>Wider context map</td></tr>
+      <tr><td>Science stops</td><td>NASA Mars 2020 sample list + Perseverance rover positions (NASA/JPL MMGIS)</td><td>Real sample sites as waypoints</td></tr>
+      <tr><td>Weather</td><td>Perseverance MEDA (representative values)</td><td>Dust, temperature, pressure</td></tr>
+      <tr><td>Radiation</td><td>Curiosity RAD surface average (Gale Crater, as a proxy)</td><td>Radiation reading</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Honest notes</h2>
+    <p class="note">HiRISE and CTX imagery are greyscale; we color them for readability. Weather values are representative, not one specific sol.
+      Comparing our route with Perseverance's real tracks showed the rover avoided a sand-ripple field that our slope and thermal data
+      didn't flag; adding rover tracks and ripple detection is our next step.</p>
+    <h2 style="margin-top:36px">What's next</h2>
+    <div class="grid">
+      <div class="card"><h3>Point of No Return</h3><p>Show the shrinking area you can still reach and return from with the oxygen left.</p></div>
+      <div class="card"><h3>Rover-proven ground</h3><p>Prefer terrain Perseverance actually drove on when planning routes.</p></div>
+      <div class="card"><h3>More site packs</h3><p>The same pipeline builds any site with HiRISE terrain, such as Gale Crater.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Team &amp; AI disclosure</h2>
+    <p class="sub">Team: <!-- add your team members' names here --> Mangal Yatra team, NASA Space Apps 2026 (NYU local event).</p>
+    <p class="sub">AI tools: Claude (Anthropic) helped write code and the data pipeline. The app uses the Gemini API (Google) at Mission
+      Control for EVA reports and questions, and speech recognition for voice commands. All safety calculations (route, hazards, oxygen,
+      turn-back) are plain math on NASA data, not AI.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Mangal Yatra · NASA Space Apps Challenge 2026 · <a href="https://github.com/ckuthe0203/mangal-yatra-touch">github.com/ckuthe0203/mangal-yatra-touch</a><br>
+    NASA data courtesy of NASA/JPL-Caltech/University of Arizona, USGS, MSSS and Arizona State University. This project is not affiliated with or endorsed by NASA.</div>
+</footer>
+</body>
+</html>
